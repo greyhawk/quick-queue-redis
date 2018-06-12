@@ -7,6 +7,7 @@ import com.ipet.queue.redis.annotation.RedisQueueProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import redis.clients.jedis.Jedis;
@@ -24,14 +25,16 @@ import java.util.concurrent.Executors;
 public class RedisQueueHandler implements IHandler {
     private Logger logger = LoggerFactory.getLogger(getClass());
 
-    private RedisConnectionFactory redisConnectionFactory;
 
+    public RedisQueueHandler() {
+
+    }
 
     @Override
     public Object run(Method method, Object[] args) throws Exception {
         long rId = 0;
         if (method.getDeclaringClass().isAnnotationPresent(RedisQueue.class) && method.isAnnotationPresent(RedisQueueProvider.class)) {
-            if (args == null || args.length != 1) {
+            if (args == null || args.length != 2) {
                 throw new Exception("Redis Queue Provider Java Interface Defined Error.");
             }
             RedisQueueProvider redisQueueProvider = method.getDeclaredAnnotation(RedisQueueProvider.class);
@@ -39,7 +42,8 @@ public class RedisQueueHandler implements IHandler {
             if (StringUtils.isBlank(queueName)) {
                 throw new Exception("Redis Queue Provider Java Config Error,please Check your configuration");
             }
-            RedisConnection connection = redisConnectionFactory.getConnection();
+
+            RedisConnection connection = (RedisConnection)args[1];
             switch (redisQueueProvider.strategy()) {
                 case SYNC:
                     try {
@@ -73,7 +77,5 @@ public class RedisQueueHandler implements IHandler {
         }
     }
 
-    public void setRedisConnectionFactory(RedisConnectionFactory redisConnectionFactory) {
-        this.redisConnectionFactory = redisConnectionFactory;
-    }
+
 }
